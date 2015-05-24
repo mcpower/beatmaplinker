@@ -38,6 +38,7 @@ def get_beatmap_info(map_type, map_id):
 
 
 def seconds_to_string(seconds):
+    """Returns a m:ss representation of a time in seconds."""
     return "{0}:{1:0>2}".format(*divmod(seconds, 60))
 
 
@@ -80,10 +81,7 @@ def format_map(tup):
 
 
 def format_comment(maps):
-    """Formats a list of osu.ppy.sh URLs into a comment.
-
-    URLs do not need to be valid beatmap URLs.
-    """
+    """Formats a list of (map_type, map_id) tuples into a comment."""
     seen = set()
     maps_without_dups = []
     for beatmap in maps:
