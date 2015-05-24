@@ -18,6 +18,8 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 
 CACHE_SIZE = int(config.get("bot", "max_cache"))
+URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')
+
 
 @lru_cache(maxsize=CACHE_SIZE)
 def get_beatmap_info(map_type, map_id):
@@ -49,7 +51,7 @@ def format_url(url):
     elif parsed.path.startswith("/s/"):
         map_type, map_id = "s", parsed.path[3:]
     elif parsed.path == "/p/beatmap":
-        query = urllib.parse.parseqs(parsed.query)
+        query = urllib.parse.parse_qs(parsed.query)
         if "b" in query:
             map_type, map_id = "b", query["b"][0]
         elif "s" in query:
@@ -61,13 +63,20 @@ def format_url(url):
 
 
 def format_comment(urls):
-    """Formats a list of osu.ppy.sh URLs into a comment."""
+    """Formats a list of osu.ppy.sh URLs into a comment.
+
+    URLs do not need to be valid beatmap URLs.
+    """
     return "{0}\n\n{1}\n\n{2}".format(
         config.get("template", "header"),
         "\n  ".join(map(format_url, filter(None, urls))),
         config.get("template", "footer")
     )
 
+
+def get_urls_from_comment(comment):
+    """Extracts all bare osu.ppy.sh URLs from a comment."""
+    return URL_REGEX.findall(html.unescape(comment))
 
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
 # r.login(config.get("reddit", "username"), config.get("reddit", "password"))
