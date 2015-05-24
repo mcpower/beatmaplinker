@@ -5,6 +5,7 @@ import requests
 import configparser
 import os
 import urllib.parse
+import time
 from functools import lru_cache
 from limitedset import LimitedSet
 
@@ -17,11 +18,12 @@ if not os.path.exists("config.ini"):
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-CACHE_SIZE = int(config.get("bot", "max_cache"))
+MAX_COMMENTS = int(config.get("bot", "max_comments"))
+OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
 
 
-@lru_cache(maxsize=CACHE_SIZE)
+@lru_cache(maxsize=OSU_CACHE)
 def get_beatmap_info(map_type, map_id):
     """Gets information about a beatmap given a URL.
 
@@ -34,38 +36,38 @@ def get_beatmap_info(map_type, map_id):
         raise Exception("osu!api returned an error of " + out["error"])
     return out
 
+
 def seconds_to_string(seconds):
     return "{0}:{1:0>2}".format(*divmod(seconds, 60))
 
-def format_url(url):
-    """Formats an osu.ppy.sh URL for a comment.
+
+def get_map_params(url):
+    """Returns a tuple of (map_type, map_id) or False if URL is invalid.
 
     Possible URL formats:
         https://osu.ppy.sh/p/beatmap?b=115891&m=0#
         https://osu.ppy.sh/b/244182
         https://osu.ppy.sh/p/beatmap?s=295480
         https://osu.ppy.sh/s/295480
-
-    Returns False if not in the correct format.
     """
     parsed = urllib.parse.urlparse(url)
-    map_type, map_id = "", ""
 
     if parsed.path.startswith("/b/"):
-        map_type, map_id = "b", parsed.path[3:]
+        return ("b", parsed.path[3:])
     elif parsed.path.startswith("/s/"):
-        map_type, map_id = "s", parsed.path[3:]
+        return ("s", parsed.path[3:])
     elif parsed.path == "/p/beatmap":
         query = urllib.parse.parse_qs(parsed.query)
         if "b" in query:
-            map_type, map_id = "b", query["b"][0]
+            return ("b", query["b"][0])
         elif "s" in query:
-            map_type, map_id = "s", query["s"][0]
-        else:
-            return False
-    else:
-        return False
+            return ("s", query["s"][0])
+    return False
 
+
+def format_map(tup):
+    """Formats a map for a comment given its type and id."""
+    map_type, map_id = tup
     info = dict(get_beatmap_info(map_type, map_id)[0])  # create new instance
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
@@ -77,33 +79,77 @@ def format_url(url):
         return config.get("template", "mapset").format(**info)
 
 
-def format_comment(urls):
+def format_comment(maps):
     """Formats a list of osu.ppy.sh URLs into a comment.
 
     URLs do not need to be valid beatmap URLs.
     """
     seen = set()
-    urls_without_dups = []
-    for url in urls:
-        if url not in seen:
-            seen.add(url)
-            urls_without_dups.append(url)
+    maps_without_dups = []
+    for beatmap in maps:
+        if beatmap not in seen:
+            seen.add(beatmap)
+            maps_without_dups.append(beatmap)
 
     return "{0}\n\n{1}\n\n{2}".format(
         config.get("template", "header"),
-        "\n  ".join(map(format_url, filter(None, urls_without_dups))),
+        "\n\n".join(map(format_map, maps_without_dups)),
         config.get("template", "footer")
     )
 
 
-def get_urls_from_comment(comment):
-    """Extracts all bare osu.ppy.sh URLs from a comment."""
-    return URL_REGEX.findall(html.unescape(comment))
+def get_maps_from_string(string):
+    """Extracts all valid maps as (map_type, map_id) in an HTML string."""
+    return list(filter(None, map(get_map_params,
+                                 URL_REGEX.findall(html.unescape(string)))))
+
+
+def has_replied(comment, r):
+    """Checks whether the bot has replied to a comment already.
+
+    Apparently costly.
+    Taken from http://www.reddit.com/r/redditdev/comments/1kxd1n/_/cbv4usl"""
+    botname = config.get("reddit", "username")
+    return any(reply.author.name == botname for reply in
+               r.get_submission(comment.permalink).comments[0].replies)
+
+
+def reply(comment, text):
+    print("Replying to {c.author.name}, comment id {c.id}".format(c=comment))
+    print("###")
+    print(text)
+    print("###")
+    comment.reply(text)
 
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
-# r.login(config.get("reddit", "username"), config.get("reddit", "password"))
+r.login(config.get("reddit", "username"), config.get("reddit", "password"))
 
-seen_comments = LimitedSet(CACHE_SIZE)
+seen_comments = LimitedSet(MAX_COMMENTS + 100)
 subreddit = config.get("reddit", "subreddit")
 
-comments = r.get_comments(subreddit)
+
+while True:
+    try:
+        comments = r.get_comments(subreddit, limit=MAX_COMMENTS)
+        for comment in comments:
+            if comment.id in seen_comments:
+                break  # already reached up to here before
+            seen_comments.add(comment.id)
+            found = get_maps_from_string(comment.body_html)
+            if not found:
+                print("New comment", comment.id, "with no maps.")
+                continue
+            if has_replied(comment, r):
+                print("We've replied to {0} before!".format(comment.id))
+                break  # we reached here in a past instance of this bot
+
+            reply(comment, format_comment(found))
+    except KeyboardInterrupt:
+        print("Stopping the bot.")
+        exit()
+    except Exception as e:
+        print("We caught an exception! It says:")
+        print(e)
+        print("Sleeping for 15 seconds.")
+        time.sleep(15)
+        continue

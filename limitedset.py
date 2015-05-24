@@ -7,9 +7,14 @@ class LimitedSet(set):
     Once it reaches the maximum length, the oldest key will be removed.
     Retains most of the time complexity of a set.
     """
-    def __init__(self, maxlen=None):
-        set.__init__(self)
-        self.queue = deque()
+    def __init__(self, maxlen=None, iterable=None):
+        if iterable is None:
+            set.__init__(self)
+            self.queue = deque()
+        else:
+            truncated = list(iterable)[-maxlen:]
+            set.__init__(self, truncated)
+            self.queue = deque(truncated)
         self.maxlen = maxlen
 
     def add(self, key):
