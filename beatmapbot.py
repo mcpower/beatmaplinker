@@ -19,6 +19,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 
 MAX_COMMENTS = int(config.get("bot", "max_comments"))
+MAX_SUBMISSIONS = int(config.get("bot", "max_submissions"))
 OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
 
@@ -96,52 +97,78 @@ def format_comment(maps):
     )
 
 
-def get_maps_from_string(string):
-    """Extracts all valid maps as (map_type, map_id) in an HTML string."""
+def get_maps_from_thing(thing):
+    """Extracts all valid maps as (map_type, map_id) in a thing."""
+    global last_seen
+    if isinstance(thing, praw.objects.Comment):
+        body_html = thing.body_html
+    elif isinstance(thing, praw.objects.Submission):
+        if not thing.selftext_html:
+            return []
+        body_html = thing.selftext_html
     return list(filter(None, map(get_map_params,
-                                 URL_REGEX.findall(html.unescape(string)))))
+                                 URL_REGEX.findall(html.unescape(body_html)))))
 
 
-def has_replied(comment, r):
-    """Checks whether the bot has replied to a comment already.
+def has_replied(thing, r):
+    """Checks whether the bot has replied to a thing already.
 
     Apparently costly.
     Taken from http://www.reddit.com/r/redditdev/comments/1kxd1n/_/cbv4usl"""
     botname = config.get("reddit", "username")
-    return any(reply.author.name == botname for reply in
-               r.get_submission(comment.permalink).comments[0].replies)
+    if isinstance(thing, praw.objects.Comment):
+        replies = r.get_submission(thing.permalink).comments[0].replies
+    elif isinstance(thing, praw.objects.Submission):
+        replies = thing.comments
+    return any(reply.author.name == botname for reply in replies)
 
 
-def reply(comment, text):
-    print("Replying to {c.author.name}, comment id {c.id}".format(c=comment))
-    print("###")
+def reply(thing, text):
+    print("Replying to {c.author.name}, thing id {c.id}".format(c=thing))
+    print()
     print(text)
-    print("###")
-    comment.reply(text)
+    print()
+    if isinstance(thing, praw.objects.Comment):
+        thing.reply(text)
+    elif isinstance(thing, praw.objects.Submission):
+        thing.add_comment(text)
+    print("Replied!")
 
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
 r.login(config.get("reddit", "username"), config.get("reddit", "password"))
 
 seen_comments = LimitedSet(MAX_COMMENTS + 100)
-subreddit = config.get("reddit", "subreddit")
+seen_submissions = LimitedSet(MAX_SUBMISSIONS + 50)
+subreddit = r.get_subreddit(config.get("reddit", "subreddit"))
+
+thing_types = [
+    ("comment", {
+        "get_content": lambda sub: sub.get_comments(limit=MAX_COMMENTS),
+        "seen": seen_comments
+    }),
+    ("submission", {
+        "get_content": lambda sub: sub.get_new(limit=MAX_SUBMISSIONS),
+        "seen": seen_submissions
+    })
+]
 
 
 while True:
     try:
-        comments = r.get_comments(subreddit, limit=MAX_COMMENTS)
-        for comment in comments:
-            if comment.id in seen_comments:
-                break  # already reached up to here before
-            seen_comments.add(comment.id)
-            found = get_maps_from_string(comment.body_html)
-            if not found:
-                print("New comment", comment.id, "with no maps.")
-                continue
-            if has_replied(comment, r):
-                print("We've replied to {0} before!".format(comment.id))
-                break  # we reached here in a past instance of this bot
+        for thing_type, data in thing_types:
+            for thing in data["get_content"](subreddit):
+                if thing.id in data["seen"]:
+                    break  # already reached up to here before
+                data["seen"].add(thing.id)
+                found = get_maps_from_thing(thing)
+                if not found:
+                    print("New", thing_type, thing.id, "with no maps.")
+                    continue
+                if has_replied(thing, r):
+                    print("We've replied to", thing_type, thing.id, "before!")
+                    break  # we reached here in a past instance of this bot
 
-            reply(comment, format_comment(found))
+                reply(thing, format_comment(found))
     except KeyboardInterrupt:
         print("Stopping the bot.")
         exit()
