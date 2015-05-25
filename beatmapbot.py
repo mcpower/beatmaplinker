@@ -138,7 +138,7 @@ def reply(thing, text):
     print("Replied!")
 
 
-def thing_loop(thing_type, content, seen):
+def thing_loop(thing_type, content, seen, r):
     for thing in content:
         if thing.id in seen:
             break  # already reached up to here before
@@ -165,9 +165,9 @@ subreddit = r.get_subreddit(config.get("reddit", "subreddit"))
 while True:
     try:
         thing_loop("comment", subreddit.get_comments(limit=MAX_COMMENTS),
-                   seen_comments)
+                   seen_comments, r)
         thing_loop("submission", subreddit.get_new(limit=MAX_SUBMISSIONS),
-                   seen_submissions)
+                   seen_submissions, r)
     except KeyboardInterrupt:
         print("Stopping the bot.")
         exit()
