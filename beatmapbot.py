@@ -8,6 +8,7 @@ import urllib.parse
 import time
 from functools import lru_cache
 from limitedset import LimitedSet
+from functools import reduce
 
 
 if not os.path.exists("config.ini"):
@@ -67,6 +68,12 @@ def get_map_params(url):
     return False
 
 
+def sanitise_md(string):
+    """Escapes any markdown characters in string."""
+    escape = list("\\[]*_") + ["~~"]
+    return reduce(lambda a, b: a.replace(b, "\\" + b), escape, string)
+
+
 def format_map(tup):
     """Formats a map for a comment given its type and id."""
     map_type, map_id = tup
@@ -77,6 +84,10 @@ def format_map(tup):
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
     info["total_length"] = seconds_to_string(int(info["total_length"]))
+
+    # Sanitised inputs
+    for key in ["artist", "creator", "source", "title", "version"]:
+        info[key] = sanitise_md(info[key])
 
     if map_type == "b":  # single map
         return config.get("template", "map").format(**info)
