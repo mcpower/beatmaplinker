@@ -89,9 +89,9 @@ def format_map(tup):
     for key in ["artist", "creator", "source", "title", "version"]:
         info[key] = sanitise_md(info[key])
 
-    if map_type == "b":  # single map
+    if len(map_info) == 1:  # single map
         return config.get("template", "map").format(**info)
-    if map_type == "s":  # beatmap set
+    else:  # beatmap set
         return config.get("template", "mapset").format(**info)
 
 
