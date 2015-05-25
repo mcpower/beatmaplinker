@@ -70,7 +70,10 @@ def get_map_params(url):
 def format_map(tup):
     """Formats a map for a comment given its type and id."""
     map_type, map_id = tup
-    info = dict(get_beatmap_info(map_type, map_id)[0])  # create new instance
+    map_info = get_beatmap_info(map_type, map_id)
+    if not map_info:  # invalid beatmap
+        return "Invalid map{}.".format(["", "set"][map_type == "s"])
+    info = dict(map_info[0])  # create new instance
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
     info["total_length"] = seconds_to_string(int(info["total_length"]))
