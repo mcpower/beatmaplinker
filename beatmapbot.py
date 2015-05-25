@@ -134,6 +134,23 @@ def reply(thing, text):
         thing.add_comment(text)
     print("Replied!")
 
+
+def thing_loop(thing_type, content, seen):
+    for thing in content:
+        if thing.id in seen:
+            break  # already reached up to here before
+        seen.add(thing.id)
+        found = get_maps_from_thing(thing)
+        if not found:
+            print("New", thing_type, thing.id, "with no maps.")
+            continue
+        if has_replied(thing, r):
+            print("We've replied to", thing_type, thing.id, "before!")
+            break  # we reached here in a past instance of this bot
+
+        reply(thing, format_comment(found))
+
+
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
 r.login(config.get("reddit", "username"), config.get("reddit", "password"))
 
@@ -141,34 +158,13 @@ seen_comments = LimitedSet(MAX_COMMENTS + 100)
 seen_submissions = LimitedSet(MAX_SUBMISSIONS + 50)
 subreddit = r.get_subreddit(config.get("reddit", "subreddit"))
 
-thing_types = [
-    ("comment", {
-        "get_content": lambda sub: sub.get_comments(limit=MAX_COMMENTS),
-        "seen": seen_comments
-    }),
-    ("submission", {
-        "get_content": lambda sub: sub.get_new(limit=MAX_SUBMISSIONS),
-        "seen": seen_submissions
-    })
-]
-
 
 while True:
     try:
-        for thing_type, data in thing_types:
-            for thing in data["get_content"](subreddit):
-                if thing.id in data["seen"]:
-                    break  # already reached up to here before
-                data["seen"].add(thing.id)
-                found = get_maps_from_thing(thing)
-                if not found:
-                    print("New", thing_type, thing.id, "with no maps.")
-                    continue
-                if has_replied(thing, r):
-                    print("We've replied to", thing_type, thing.id, "before!")
-                    break  # we reached here in a past instance of this bot
-
-                reply(thing, format_comment(found))
+        thing_loop("comment", subreddit.get_comments(limit=MAX_COMMENTS),
+                   seen_comments)
+        thing_loop("submission", subreddit.get_new(limit=MAX_SUBMISSIONS),
+                   seen_submissions)
     except KeyboardInterrupt:
         print("Stopping the bot.")
         exit()
