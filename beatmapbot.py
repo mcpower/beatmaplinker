@@ -74,9 +74,8 @@ def sanitise_md(string):
     return reduce(lambda a, b: a.replace(b, "\\" + b), escape, string)
 
 
-def format_map(tup):
+def format_map(map_type, map_id):
     """Formats a map for a comment given its type and id."""
-    map_type, map_id = tup
     map_info = get_beatmap_info(map_type, map_id)
     if not map_info:  # invalid beatmap
         return "Invalid map{}.".format(["", "set"][map_type == "s"])
@@ -106,9 +105,16 @@ def format_comment(maps):
 
     return "{0}\n\n{1}\n\n{2}".format(
         config.get("template", "header"),
-        "\n\n".join(map(format_map, maps_without_dups)),
+        "\n\n".join(map(lambda tup: format_map(*tup), maps_without_dups)),
         config.get("template", "footer")
     )
+
+
+def get_maps_from_html(html_string):
+    """Returns a list of all valid maps as (map_type, map_id) tuples
+    from some HTML.
+    """
+    return [m for m in URL_REGEX.findall(html_string) if m]
 
 
 def get_maps_from_thing(thing):
@@ -121,8 +127,7 @@ def get_maps_from_thing(thing):
         if not thing.selftext_html:
             return []
         body_html = thing.selftext_html
-    return list(filter(None, map(get_map_params,
-                                 URL_REGEX.findall(html.unescape(body_html)))))
+    return get_maps_from_html(html.unescape(body_html))
 
 
 def has_replied(thing, r):
