@@ -115,7 +115,6 @@ def get_maps_from_thing(thing):
     """Returns a list of all valid maps as (map_type, map_id) tuples
     from a thing.
     """
-    global last_seen
     if isinstance(thing, praw.objects.Comment):
         body_html = thing.body_html
     elif isinstance(thing, praw.objects.Submission):
