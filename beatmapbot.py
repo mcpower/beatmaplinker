@@ -27,7 +27,7 @@ URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)
 
 @lru_cache(maxsize=OSU_CACHE)
 def get_beatmap_info(map_type, map_id):
-    """Gets information about a beatmap given a URL.
+    """Gets information about a beatmap given a type and id.
 
     Cached helper function to try to minimize osu! api requests.
     """
@@ -112,7 +112,9 @@ def format_comment(maps):
 
 
 def get_maps_from_thing(thing):
-    """Extracts all valid maps as (map_type, map_id) in a thing."""
+    """Returns a list of all valid maps as (map_type, map_id) tuples
+    from a thing.
+    """
     global last_seen
     if isinstance(thing, praw.objects.Comment):
         body_html = thing.body_html
@@ -138,6 +140,7 @@ def has_replied(thing, r):
 
 
 def reply(thing, text):
+    """Post a comment replying to a thing."""
     print("Replying to {c.author.name}, thing id {c.id}".format(c=thing))
     print()
     print(text)
@@ -150,6 +153,7 @@ def reply(thing, text):
 
 
 def thing_loop(thing_type, content, seen, r):
+    """Scans content for new things to reply to."""
     for thing in content:
         if thing.id in seen:
             break  # already reached up to here before
