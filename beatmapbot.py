@@ -114,7 +114,8 @@ def get_maps_from_html(html_string):
     """Returns a list of all valid maps as (map_type, map_id) tuples
     from some HTML.
     """
-    return [m for m in URL_REGEX.findall(html_string) if m]
+    return list(filter(None, map(get_map_params,
+                                 URL_REGEX.findall(html_string))))
 
 
 def get_maps_from_thing(thing):
