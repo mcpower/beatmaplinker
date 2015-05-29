@@ -31,14 +31,7 @@ APPROVED_STATUS = {
     "-1": "WIP",
     "-2": "Graveyard"
 }
-APPROVED_STATUS_FORMAT = {
-    "3": "*",
-    "2": "**",
-    "1": "**",
-    "0": "",
-    "-1": "",
-    "-2": "~~"
-}
+APPROVED_STATUS_FORMAT = config["approved_formats"]
 
 
 @lru_cache(maxsize=OSU_CACHE)
