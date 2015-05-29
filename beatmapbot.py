@@ -31,7 +31,9 @@ APPROVED_STATUS = {
     "-1": "WIP",
     "-2": "Graveyard"
 }
-APPROVED_STATUS_FORMAT = config["approved_formats"]
+APPROVED_FORMAT_FOUND = "approved_formats" in config
+if APPROVED_FORMAT_FOUND:
+    APPROVED_STATUS_FORMAT = config["approved_formats"]
 
 
 @lru_cache(maxsize=OSU_CACHE)
@@ -89,7 +91,8 @@ def format_map(map_type, map_id):
     if not map_info:  # invalid beatmap
         return "Invalid map{}.".format(["", "set"][map_type == "s"])
     info = dict(map_info[0])  # create new instance
-    info["approved_format"] = APPROVED_STATUS_FORMAT[info["approved"]]
+    if APPROVED_FORMAT_FOUND:
+        info["approved_format"] = APPROVED_STATUS_FORMAT[info["approved"]]
     info["approved"] = APPROVED_STATUS[info["approved"]]
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
