@@ -23,6 +23,22 @@ MAX_COMMENTS = int(config.get("bot", "max_comments"))
 MAX_SUBMISSIONS = int(config.get("bot", "max_submissions"))
 OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
+APPROVED_STATUS = {
+    "3": "Qualified",
+    "2": "Approved",
+    "1": "Ranked",
+    "0": "Pending",
+    "-1": "WIP",
+    "-2": "Graveyard"
+}
+APPROVED_STATUS_FORMAT = {
+    "3": "*",
+    "2": "**",
+    "1": "**",
+    "0": "",
+    "-1": "",
+    "-2": "~~"
+}
 
 
 @lru_cache(maxsize=OSU_CACHE)
@@ -80,6 +96,8 @@ def format_map(map_type, map_id):
     if not map_info:  # invalid beatmap
         return "Invalid map{}.".format(["", "set"][map_type == "s"])
     info = dict(map_info[0])  # create new instance
+    info["approved_format"] = APPROVED_STATUS_FORMAT[info["approved"]]
+    info["approved"] = APPROVED_STATUS[info["approved"]]
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
     info["total_length"] = seconds_to_string(int(info["total_length"]))
