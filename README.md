@@ -10,7 +10,7 @@ At the time of writing, an instance of the bot is running at [/u/BeatmapLinker](
 * Python 3 for the script
 * Modules `praw` and `requests` for using the reddit and osu! APIs respectively.
 
-Copy `config_example.ini` to `config.ini`, edit to your needs, and run the bot.  
+Copy `config_example.ini` to `config.ini`, `template_extras_example.ini` to `template_extras.ini` edit to your needs, and run the bot.  
 The values used in the map and mapset templates are taken from the [JSON response](https://github.com/peppy/osu-api/wiki#response) of the osu! API, with a few slight changes for formatting.
 
 # Default formatting

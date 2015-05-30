@@ -2,10 +2,10 @@ import re
 import html
 import praw
 import requests
-import configparser
 import os
 import urllib.parse
 import time
+from spaceconfigparser import ConfigParser
 from functools import lru_cache
 from limitedset import LimitedSet
 from functools import reduce
@@ -16,24 +16,15 @@ if not os.path.exists("config.ini"):
     print("Copy config_example.ini to config.ini and modify to your needs.")
     exit()
 
-config = configparser.ConfigParser()
+config = ConfigParser()
 config.read("config.ini")
+template_extras = ConfigParser()
+template_extras.read("template_extras.ini")
 
 MAX_COMMENTS = int(config.get("bot", "max_comments"))
 MAX_SUBMISSIONS = int(config.get("bot", "max_submissions"))
 OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
-APPROVED_STATUS = {
-    "3": "Qualified",
-    "2": "Approved",
-    "1": "Ranked",
-    "0": "Pending",
-    "-1": "WIP",
-    "-2": "Graveyard"
-}
-APPROVED_FORMAT_FOUND = "approved_formats" in config
-if APPROVED_FORMAT_FOUND:
-    APPROVED_STATUS_FORMAT = config["approved_formats"]
 
 
 @lru_cache(maxsize=OSU_CACHE)
@@ -91,9 +82,11 @@ def format_map(map_type, map_id):
     if not map_info:  # invalid beatmap
         return "Invalid map{}.".format(["", "set"][map_type == "s"])
     info = dict(map_info[0])  # create new instance
-    if APPROVED_FORMAT_FOUND:
-        info["approved_format"] = APPROVED_STATUS_FORMAT[info["approved"]]
-    info["approved"] = APPROVED_STATUS[info["approved"]]
+
+    for section in template_extras.sections():
+        section_obj = template_extras[section]
+        info[section] = section_obj[info[section_obj["_key"]]]
+
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
     info["total_length"] = seconds_to_string(int(info["total_length"]))
