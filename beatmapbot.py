@@ -153,6 +153,9 @@ def has_replied(thing, r):
 
 def reply(thing, text):
     """Post a comment replying to a thing."""
+    if thing.author.name == config.get("reddit", "username"):
+        print("Replying to self. Terminating.")
+        return
     print("Replying to {c.author.name}, thing id {c.id}".format(c=thing))
     print()
     print(text)
