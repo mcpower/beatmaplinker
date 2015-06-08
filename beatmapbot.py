@@ -72,8 +72,12 @@ def get_map_params(url):
 
 def sanitise_md(string):
     """Escapes any markdown characters in string."""
-    escape = list("\\[]*_") + ["~~"]
-    return reduce(lambda a, b: a.replace(b, "\\" + b), escape, string)
+    emphasis = "*_"
+    escaped = reduce(lambda a, b: a.replace(b, "&#{:0>4};".format(ord(b))),
+                     emphasis, string)
+    other_chars = list("\\[]") + ["~~"]
+    escaped = reduce(lambda a, b: a.replace(b, "\\" + b), other_chars, escaped)
+    return escaped
 
 
 def format_map(map_type, map_id):
