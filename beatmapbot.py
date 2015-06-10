@@ -75,7 +75,7 @@ def sanitise_md(string):
     emphasis = "*_"
     escaped = reduce(lambda a, b: a.replace(b, "&#{:0>4};".format(ord(b))),
                      emphasis, string)
-    other_chars = list("\\[]") + ["~~"]
+    other_chars = list("\\[]^") + ["~~"]
     escaped = reduce(lambda a, b: a.replace(b, "\\" + b), other_chars, escaped)
     return escaped
 
