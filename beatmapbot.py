@@ -57,16 +57,19 @@ def get_map_params(url):
     """
     parsed = urllib.parse.urlparse(url)
 
+    map_type, map_id = None, None
     if parsed.path.startswith("/b/"):
-        return ("b", parsed.path[3:])
+        map_type, map_id = "b", parsed.path[3:]
     elif parsed.path.startswith("/s/"):
-        return ("s", parsed.path[3:])
+        map_type, map_id = "s", parsed.path[3:]
     elif parsed.path == "/p/beatmap":
         query = urllib.parse.parse_qs(parsed.query)
         if "b" in query:
-            return ("b", query["b"][0])
+            map_type, map_id = "b", query["b"][0]
         elif "s" in query:
-            return ("s", query["s"][0])
+            map_type, map_id = "s", query["s"][0]
+    if map_type and map_id.isdigit():
+        return map_type, map_id
     return False
 
 
@@ -107,6 +110,9 @@ def format_map(map_type, map_id):
 
 def format_comment(maps):
     """Formats a list of (map_type, map_id) tuples into a comment."""
+    if len(maps) > 50:
+        return "Too many maps.\n\n{0}".format(config.get("template", "footer"))
+
     seen = set()
     maps_without_dups = []
     for beatmap in maps:
@@ -139,6 +145,8 @@ def get_maps_from_thing(thing):
         if not thing.selftext_html:
             return []
         body_html = thing.selftext_html
+    else:
+        raise Exception("{0} is an invalid thing type".format(type(thing)))
     return get_maps_from_html(html.unescape(body_html))
 
 
@@ -152,6 +160,8 @@ def has_replied(thing, r):
         replies = r.get_submission(thing.permalink).comments[0].replies
     elif isinstance(thing, praw.objects.Submission):
         replies = thing.comments
+    else:
+        raise Exception("{0} is an invalid thing type".format(type(thing)))
     return any(reply.author.name == botname for reply in replies)
 
 
@@ -168,6 +178,8 @@ def reply(thing, text):
         thing.reply(text)
     elif isinstance(thing, praw.objects.Submission):
         thing.add_comment(text)
+    else:
+        raise Exception("{0} is an invalid thing type".format(type(thing)))
     print("Replied!")
 
 
