@@ -108,21 +108,26 @@ def format_map(map_type, map_id):
         return config.get("template", "mapset").format(**info)
 
 
+def remove_dups(iterable):
+    """Creates a generator to get unique elements from iterable.
+
+    Items in iterable must be hashable.
+    """
+    seen = set()
+    for item in iterable:
+        if item not in seen:
+            seen.add(item)
+            yield item
+
+
 def format_comment(maps):
     """Formats a list of (map_type, map_id) tuples into a comment."""
     if len(maps) > 50:
         return "Too many maps.\n\n{0}".format(config.get("template", "footer"))
 
-    seen = set()
-    maps_without_dups = []
-    for beatmap in maps:
-        if beatmap not in seen:
-            seen.add(beatmap)
-            maps_without_dups.append(beatmap)
-
     return "{0}\n\n{1}\n\n{2}".format(
         config.get("template", "header"),
-        "\n\n".join(map(lambda tup: format_map(*tup), maps_without_dups)),
+        "\n\n".join(map(lambda tup: format_map(*tup), remove_dups(maps))),
         config.get("template", "footer")
     )
 
