@@ -219,6 +219,7 @@ while True:
                    seen_comments, r)
         thing_loop("submission", subreddit.get_new(limit=MAX_SUBMISSIONS),
                    seen_submissions, r)
+        time.sleep(3)
     except KeyboardInterrupt:
         print("Stopping the bot.")
         exit()
