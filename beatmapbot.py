@@ -124,8 +124,6 @@ def remove_dups(iterable):
 
 def format_comment(maps):
     """Formats a list of (map_type, map_id) tuples into a comment."""
-    if len(maps) > 50:
-        return "Too many maps.\n\n{0}".format(config.get("template", "footer"))
 
     return "{0}\n\n{1}\n\n{2}".format(
         config.get("template", "header"),
