@@ -68,7 +68,7 @@ def get_map_params(url):
             map_type, map_id = "b", query["b"][0]
         elif "s" in query:
             map_type, map_id = "s", query["s"][0]
-    if "&" in map_id:
+    if map_id is not None and "&" in map_id:
         map_id = map_id[:map_id.index("&")]
     if map_type and map_id.isdigit():
         return map_type, map_id
