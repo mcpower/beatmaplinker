@@ -25,6 +25,7 @@ MAX_COMMENTS = int(config.get("bot", "max_comments"))
 MAX_SUBMISSIONS = int(config.get("bot", "max_submissions"))
 OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
+COMMENT_CHAR_LIMIT = 10000
 
 
 @lru_cache(maxsize=OSU_CACHE)
@@ -123,29 +124,49 @@ def remove_dups(iterable):
 
 
 def format_comment(maps):
-    """Formats a list of (map_type, map_id) tuples into a comment."""
-    header = config.get("template", "header")
-    footer = config.get("template", "footer")
-    body = ""
+    """Formats a list of (map_type, map_id) tuples into a list of comments."""
     line_break = "\n\n"
-    base_len = len(header) + len(footer) + len(line_break) * 2
+    bodies = [config.get("template", "header") + line_break]  # start w/ header
+    footer = config.get("template", "footer")
+
     if "sep" in config["template"]:
         sep = config.get("template", "sep").replace("\\n", "\n")
     else:
         sep = line_break
 
-    for beatmap in remove_dups(maps):
-        next_map = format_map(*beatmap)
-        if base_len + len(body) + len(sep) + len(next_map) > 10000:
-            print("We've reached the char limit! This has", len(maps), "maps.")
-            break
-        if body:
-            body += sep
-        body += next_map
+    f_len, s_len, b_len = map(len, [footer, sep, line_break])
+    f_len += b_len  # footer will always be with a line break
 
-    return "{header}{br}{body}{br}{footer}".format(
-        header=header, body=body, footer=footer, br=line_break
-    )
+    maps = list(remove_dups(maps))
+    first_map = True
+    for beatmap in maps:
+        next_map = format_map(*beatmap)
+        next_len = len(bodies[-1]) + len(next_map) + f_len
+
+        if not first_map:  # first map of comment means no separator
+            next_len += s_len
+
+        new_comment_after = False
+        if next_len > COMMENT_CHAR_LIMIT:  # comment char limit
+            if next_len - f_len > COMMENT_CHAR_LIMIT or beatmap is maps[-1]:
+                bodies.append("")
+                first_map = True
+            else:  # we cram it in by removing footer AND it's not the last map
+                # sometimes I wish Python had a defer statement
+                new_comment_after = True
+
+        if first_map:
+            first_map = False
+        else:
+            bodies[-1] += sep
+        bodies[-1] += next_map
+
+        if new_comment_after:
+            bodies.append("")
+            first_map = True
+
+    bodies[-1] += line_break + footer
+    return bodies
 
 
 def get_maps_from_html(html_string):
@@ -228,7 +249,7 @@ def thing_loop(thing_type, content, seen, r):
             print("We've replied to", thing_type, thing.id, "before!")
             break  # we reached here in a past instance of this bot
 
-        reply_single(thing, format_comment(found))
+        reply(thing, format_comment(found))
 
 
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
