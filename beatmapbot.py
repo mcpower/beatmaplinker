@@ -125,6 +125,9 @@ def remove_dups(iterable):
 
 def format_comment(maps):
     """Formats a list of (map_type, map_id) tuples into a list of comments."""
+    if len(maps) > 300:
+        return ["Too many maps.\n\n" + config.get("template", "footer")]
+
     line_break = "\n\n"
     bodies = [config.get("template", "header") + line_break]  # start w/ header
     footer = config.get("template", "footer")
