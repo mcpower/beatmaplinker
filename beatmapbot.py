@@ -186,22 +186,32 @@ def has_replied(thing, r):
     return any(reply.author.name == botname for reply in replies)
 
 
-def reply(thing, text):
+def reply_single(thing, text):
     """Post a comment replying to a thing."""
-    if thing.author.name == config.get("reddit", "username"):
-        print("Replying to self. Terminating.")
-        return
     print("Replying to {c.author.name}, thing id {c.id}".format(c=thing))
     print()
     print(text)
     print()
     if isinstance(thing, praw.objects.Comment):
-        thing.reply(text)
+        out = thing.reply(text)
     elif isinstance(thing, praw.objects.Submission):
-        thing.add_comment(text)
+        out = thing.add_comment(text)
     else:
         raise Exception("{0} is an invalid thing type".format(type(thing)))
     print("Replied!")
+    return out
+
+
+def reply(thing, texts):
+    """Post comment(s) replying to a thing.
+
+    Takes in a list of comments to chain.
+    """
+    if thing.author.name == config.get("reddit", "username"):
+        print("Replying to self. Terminating.")
+        return
+    return reduce(lambda thing, text: reply_single(thing, text),
+                  texts, thing)
 
 
 def thing_loop(thing_type, content, seen, r):
@@ -218,7 +228,7 @@ def thing_loop(thing_type, content, seen, r):
             print("We've replied to", thing_type, thing.id, "before!")
             break  # we reached here in a past instance of this bot
 
-        reply(thing, format_comment(found))
+        reply_single(thing, format_comment(found))
 
 
 r = praw.Reddit(user_agent=config.get("reddit", "user_agent"))
