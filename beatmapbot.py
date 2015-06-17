@@ -124,11 +124,27 @@ def remove_dups(iterable):
 
 def format_comment(maps):
     """Formats a list of (map_type, map_id) tuples into a comment."""
+    header = config.get("template", "header")
+    footer = config.get("template", "footer")
+    body = ""
+    line_break = "\n\n"
+    base_len = len(header) + len(footer) + len(line_break) * 2
+    if "sep" in config["template"]:
+        sep = config.get("template", "sep").replace("\\n", "\n")
+    else:
+        sep = line_break
 
-    return "{0}\n\n{1}\n\n{2}".format(
-        config.get("template", "header"),
-        "\n\n".join(map(lambda tup: format_map(*tup), remove_dups(maps))),
-        config.get("template", "footer")
+    for beatmap in remove_dups(maps):
+        next_map = format_map(*beatmap)
+        if base_len + len(body) + len(sep) + len(next_map) > 10000:
+            print("We've reached the char limit! This has", len(maps), "maps.")
+            break
+        if body:
+            body += sep
+        body += next_map
+
+    return "{header}{br}{body}{br}{footer}".format(
+        header=header, body=body, footer=footer, br=line_break
     )
 
 
