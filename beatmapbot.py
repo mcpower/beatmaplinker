@@ -93,10 +93,6 @@ def format_map(map_type, map_id):
         return "Invalid map{}.".format(["", "set"][map_type == "s"])
     info = dict(map_info[0])  # create new instance
 
-    for section in template_extras.sections():
-        section_obj = template_extras[section]
-        info[section] = section_obj[info[section_obj["_key"]]]
-
     info["difficultyrating"] = float(info["difficultyrating"])
     info["hit_length"] = seconds_to_string(int(info["hit_length"]))
     info["total_length"] = seconds_to_string(int(info["total_length"]))
@@ -104,6 +100,10 @@ def format_map(map_type, map_id):
     # Sanitised inputs
     for key in ["artist", "creator", "source", "title", "version"]:
         info[key] = sanitise_md(info[key])
+
+    for section in template_extras.sections():
+        section_obj = template_extras[section]
+        info[section] = section_obj[info[section_obj["_key"]]].format(**info)
 
     if len(map_info) == 1:  # single map
         return config.get("template", "map").format(**info)
