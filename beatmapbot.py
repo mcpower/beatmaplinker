@@ -6,7 +6,6 @@ import os
 import urllib.parse
 import time
 from spaceconfigparser import ConfigParser
-from functools import lru_cache
 from limitedset import LimitedSet
 from functools import reduce
 
@@ -23,12 +22,10 @@ template_extras.read("template_extras.ini")
 
 MAX_COMMENTS = int(config.get("bot", "max_comments"))
 MAX_SUBMISSIONS = int(config.get("bot", "max_submissions"))
-OSU_CACHE = int(config.get("bot", "osu_cache"))
 URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
 COMMENT_CHAR_LIMIT = 10000
 
 
-@lru_cache(maxsize=OSU_CACHE)
 def get_beatmap_info(map_type, map_id):
     """Gets information about a beatmap given a type and id.
 
