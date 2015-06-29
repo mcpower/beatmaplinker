@@ -1,7 +1,7 @@
-import configparser
+import configparser as cp
 
 
-class ConfigParser(configparser.ConfigParser):
+class ConfigParser(cp.ConfigParser):
     """A space-aware ConfigParser.
 
     Wrap quotes around values and spaces will be retained.
@@ -14,11 +14,13 @@ class ConfigParser(configparser.ConfigParser):
         self.__keep_spaces = args.get(KEEP_SPACES_KEYWORD, True)
         args.pop(KEEP_SPACES_KEYWORD, None)
 
-        configparser.ConfigParser.__init__(self, **args)
+        cp.ConfigParser.__init__(self, **args)
 
-    def get(self, section, option):
-        value = configparser.ConfigParser.get(self, section, option)
-        if self.__keep_spaces:
+    def get(self, section, option, *, raw=False, vars=None,
+            fallback=cp._UNSET):
+        value = cp.ConfigParser.get(self, section, option, raw=raw, vars=vars,
+                                    fallback=fallback)
+        if self.__keep_spaces and value is not None and value != fallback:
             value = self._unwrap_quotes(value)
 
         return value
@@ -27,7 +29,7 @@ class ConfigParser(configparser.ConfigParser):
         if self.__keep_spaces:
             value = self._wrap_to_quotes(value)
 
-        configparser.ConfigParser.set(self, section, option, value)
+        cp.ConfigParser.set(self, section, option, value)
 
     @staticmethod
     def _unwrap_quotes(src):
