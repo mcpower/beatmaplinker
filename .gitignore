@@ -57,4 +57,4 @@ docs/_build/
 target/
 
 config.ini
-template_extras.ini
+replacements.ini
