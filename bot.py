@@ -6,11 +6,11 @@ from beatmaplinker.structs import LimitedSet, ConfigParser
 
 
 class Bot:
-    def __init__(self, config, replacements):
+    def __init__(self, config, replace):
         try:
             self.reddit = reddit.Reddit(**config["reddit"])
             self.osu = osu.Osu(**config["osu"])
-            self.formatter = format.Formatter(replacements, **config["template"])
+            self.formatter = format.Formatter(replace, **config["template"])
 
             bot_sect = config["bot"]
             self.max_comments = int(bot_sect["max_comments"])
@@ -18,11 +18,10 @@ class Bot:
             self.max_submissions = int(bot_sect["max_submissions"])
             self.seen_submissions = LimitedSet(self.max_submissions + 50)
         except Exception as e:
-            # print("We had an exception when parsing the config.")
-            # print("Have you configured config.ini correctly?")
-            # print("The error caught was:")
-            # print(e)
-            raise e
+            print("We had an exception when parsing the config.")
+            print("Have you configured config.ini correctly?")
+            print("The error caught was:")
+            print(e)
             sys.exit()
 
     def scan_content(self, thing_type, content, seen):

@@ -1,7 +1,6 @@
 from functools import reduce
 
 
-# helpers
 def remove_dups(iterable):
     """Creates a generator to get unique elements from iterable.
 
