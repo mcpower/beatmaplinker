@@ -10,8 +10,19 @@ At the time of writing, an instance of the bot is running at [/u/BeatmapLinker](
 * Python 3 for the script
 * Modules `praw` and `requests` for using the reddit and osu! APIs respectively.
 
-Copy `config_example.ini` to `config.ini`, `template_extras_example.ini` to `template_extras.ini` edit to your needs, and run the bot.  
-The values used in the map and mapset templates are taken from the [JSON response](https://github.com/peppy/osu-api/wiki#response) of the osu! API, with a few slight changes for formatting.
+# Configuration
+
+Copy `config_example.ini` to `config.ini` and edit to your needs. Any option found in `config_default.ini` can be overridden in `config.ini`.
+
+The only option not found in both the example and default configurations is `sep` under the `template` section. This defines the separator between the maps in a comment, which defaults to two new lines.
+
+The map and mapset templates are `str.format`ted with the [JSON response](https://github.com/peppy/osu-api/wiki#response) from the osu! API. Some various replacements have been made:
+
+* `difficultyrating` (star difficulty) has been converted into a float
+* `hit_length` and `total_length` (length of beatmap) has been converted into a string in the form mm:ss
+* all places where a Markdown character may appear are escaped
+
+You can define your own replacements for things such as `mode` and `approved` with `replacements.ini`. An example is provided in `replacement_defaults.ini` which is used in the default configuration. Note that these are also `str.format`ted with the osu! API JSON response, like in the replacement `ar_display`.
 
 # Default formatting
 
@@ -20,6 +31,6 @@ With the introduction of ranking status being available in comments, each status
 * ***Qualified***
 * **Approved**
 * **Ranked**
-* Pending
+* Pending (this seems to be unused)
 * WIP
 * ~~Graveyard~~
