@@ -17,6 +17,7 @@ class Bot:
             self.seen_comments = LimitedSet(self.max_comments + 100)
             self.max_submissions = int(bot_sect["max_submissions"])
             self.seen_submissions = LimitedSet(self.max_submissions + 50)
+            self.extra_delay = int(bot_sect.get("extra_delay", 0))
         except Exception as e:
             print("We had an exception when parsing the config.")
             print("Have you configured config.ini correctly?")
@@ -69,7 +70,7 @@ class Bot:
                     self.reddit.get_submissions(self.max_submissions),
                     self.seen_submissions)
 
-                time.sleep(3)
+                time.sleep(3 + self.extra_delay)
             except KeyboardInterrupt:
                 print("Stopping the bot.")
                 sys.exit()
