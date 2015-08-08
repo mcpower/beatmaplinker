@@ -2,8 +2,8 @@ from functools import reduce
 
 
 class Formatter:
-    def __init__(self, replacements, header, footer, mapset, map, sep="\n\n",
-                 char_limit=10000):
+    def __init__(self, replacements, mapset, map, header="", footer="",
+                 sep="\n\n", char_limit=10000):
         self.replacements = replacements
         self.header = header
         self.footer = footer
@@ -44,10 +44,17 @@ class Formatter:
         maps = list(maps)  # used for last map detection
 
         line_break = "\n\n"
-        bodies = [self.header + line_break]  # start w/ header
+        if self.header:
+            bodies = [self.header + line_break]  # start w/ header
+        else:
+            bodies = [""]
 
         f_len, s_len, b_len = map(len, [self.footer, self.sep, line_break])
-        f_len += b_len  # footer will always be with a line break
+
+        if self.footer:
+            f_len += b_len  # footer will always be with a line break
+        else:
+            f_len = 0
 
         first_map = True
         for beatmap in maps:
@@ -76,7 +83,8 @@ class Formatter:
                 bodies.append("")
                 first_map = True
 
-        bodies[-1] += line_break + self.footer
+        if self.footer:
+            bodies[-1] += line_break + self.footer
         return bodies
 
 
