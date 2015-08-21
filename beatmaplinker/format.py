@@ -48,8 +48,6 @@ class Formatter:
 
     def format_comments(self, maps, selfpost=False, meme=False):
         """Formats a list of map strings into a list of comments."""
-        maps = list(maps)  # used for last map detection
-
         header = self.header
         footer = self.footer
         if selfpost:

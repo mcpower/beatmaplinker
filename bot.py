@@ -50,10 +50,10 @@ class Bot:
             if len(found) > 300:
                 comments = ["Too many maps.\n\n" + self.formatter.footer]
             else:
-                map_strings = map(h.compose(
+                map_strings = list(map(h.compose(
                     self.osu.get_beatmap_info,
                     self.formatter.format_map
-                ), found)
+                ), found))
                 is_selfpost = thing_type == "submission"
                 is_meme = (self.meme is not None and
                            sum(self.meme in s for s in map_strings) > 1)
