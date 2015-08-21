@@ -18,6 +18,7 @@ class Bot:
             self.max_submissions = int(bot_sect["max_submissions"])
             self.seen_submissions = LimitedSet(self.max_submissions + 50)
             self.extra_delay = int(bot_sect.get("extra_delay", 0))
+            self.meme = bot_sect.get("meme", None)
         except Exception as e:
             print("We had an exception when parsing the config.")
             print("Have you configured config.ini correctly?")
@@ -54,8 +55,12 @@ class Bot:
                     self.formatter.format_map
                 ), found)
                 is_selfpost = thing_type == "submission"
+                is_meme = (self.meme is not None and
+                           sum(self.meme in s for s in map_strings) > 1)
+
                 comments = self.formatter.format_comments(map_strings,
-                                                          selfpost=is_selfpost)
+                                                          selfpost=is_selfpost,
+                                                          meme=is_meme)
 
             self.reddit.reply(thing, comments)
 

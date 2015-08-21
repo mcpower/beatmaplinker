@@ -3,20 +3,16 @@ from functools import reduce
 
 class Formatter:
     def __init__(self, replacements, mapset, map, header="", footer="",
-                 selfpost_header=None, selfpost_footer=None, sep="\n\n",
-                 char_limit=10000):
+                 selfpost_header=None, selfpost_footer=None, meme_header=None,
+                 meme_footer=None, sep="\n\n", char_limit=10000):
         self.replacements = replacements
         self.header = header
         self.footer = footer
 
-        if selfpost_header is None:
-            self.selfpost_header = header
-        else:
-            self.selfpost_header = selfpost_header
-        if selfpost_footer is None:
-            self.selfpost_footer = footer
-        else:
-            self.selfpost_footer = selfpost_footer
+        self.selfpost_header = selfpost_header
+        self.selfpost_footer = selfpost_footer
+        self.meme_header = meme_header
+        self.meme_footer = meme_footer
 
         self.mapset = mapset
         self.map = map
@@ -50,15 +46,22 @@ class Formatter:
         else:  # beatmap set
             return self.mapset.format(**info)
 
-    def format_comments(self, maps, selfpost=False):
+    def format_comments(self, maps, selfpost=False, meme=False):
         """Formats a list of map strings into a list of comments."""
         maps = list(maps)  # used for last map detection
+
+        header = self.header
+        footer = self.footer
         if selfpost:
-            header = self.selfpost_header
-            footer = self.selfpost_footer
-        else:
-            header = self.header
-            footer = self.footer
+            if self.selfpost_header is not None:
+                header = self.selfpost_header
+            if self.selfpost_footer is not None:
+                footer = self.selfpost_footer
+        if meme:
+            if self.meme_header is not None:
+                header = self.meme_header
+            if self.meme_footer is not None:
+                footer = self.meme_footer
 
         line_break = "\n\n"
         if header:
