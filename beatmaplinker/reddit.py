@@ -22,7 +22,8 @@ class Reddit:
             replies = t.comments
         else:
             raise Exception("{0} is an invalid thing type".format(type(t)))
-        return any(reply.author.name == self.botname for reply in replies)
+        return any(reply.author.name == self.botname for reply in replies
+                   if reply is not None)
 
     def reply(self, thing, texts):
         """Post comment(s) replying to a thing.
