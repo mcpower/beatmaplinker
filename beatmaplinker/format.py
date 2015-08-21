@@ -3,10 +3,21 @@ from functools import reduce
 
 class Formatter:
     def __init__(self, replacements, mapset, map, header="", footer="",
-                 sep="\n\n", char_limit=10000):
+                 selfpost_header=None, selfpost_footer=None, sep="\n\n",
+                 char_limit=10000):
         self.replacements = replacements
         self.header = header
         self.footer = footer
+
+        if selfpost_header is None:
+            self.selfpost_header = header
+        else:
+            self.selfpost_header = selfpost_header
+        if selfpost_footer is None:
+            self.selfpost_footer = footer
+        else:
+            self.selfpost_footer = selfpost_footer
+
         self.mapset = mapset
         self.map = map
         self.sep = sep
@@ -39,17 +50,23 @@ class Formatter:
         else:  # beatmap set
             return self.mapset.format(**info)
 
-    def format_comments(self, maps):
+    def format_comments(self, maps, selfpost=False):
         """Formats a list of map strings into a list of comments."""
         maps = list(maps)  # used for last map detection
+        if selfpost:
+            header = self.selfpost_header
+            footer = self.selfpost_footer
+        else:
+            header = self.header
+            footer = self.footer
 
         line_break = "\n\n"
-        if self.header:
-            bodies = [self.header + line_break]  # start w/ header
+        if header:
+            bodies = [header + line_break]  # start w/ header
         else:
             bodies = [""]
 
-        f_len, s_len, b_len = map(len, [self.footer, self.sep, line_break])
+        f_len, s_len, b_len = map(len, [footer, self.sep, line_break])
 
         if self.footer:
             f_len += b_len  # footer will always be with a line break
@@ -83,8 +100,8 @@ class Formatter:
                 bodies.append("")
                 first_map = True
 
-        if self.footer:
-            bodies[-1] += line_break + self.footer
+        if footer:
+            bodies[-1] += line_break + footer
         return bodies
 
 

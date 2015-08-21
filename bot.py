@@ -53,7 +53,9 @@ class Bot:
                     self.osu.get_beatmap_info,
                     self.formatter.format_map
                 ), found)
-                comments = self.formatter.format_comments(map_strings)
+                is_selfpost = thing_type == "submission"
+                comments = self.formatter.format_comments(map_strings,
+                                                          selfpost=is_selfpost)
 
             self.reddit.reply(thing, comments)
 
