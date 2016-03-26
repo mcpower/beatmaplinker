@@ -1,10 +1,18 @@
 from functools import reduce
 
+MODES = [
+    ("0", "Standard"),
+    ("1", "Taiko"),
+    ("2", "CtB"),
+    ("3", "Mania")
+]
+
 
 class Formatter:
     def __init__(self, replacements, mapset, map, header="", footer="",
                  selfpost_header=None, selfpost_footer=None, meme_header=None,
-                 meme_footer=None, sep="\n\n", char_limit=10000):
+                 meme_footer=None, sep="\n\n", char_limit=10000, diff="",
+                 diffs=""):
         self.replacements = replacements
         self.header = header
         self.footer = footer
@@ -20,6 +28,9 @@ class Formatter:
         self.char_limit = char_limit
         self.sep = self.sep.replace("\\n", "\n")
 
+        self.diff = diff
+        self.diffs = diffs
+
     def format_map(self, map_info):
         """Formats a map for a comment given a array of dicts.
 
@@ -33,10 +44,26 @@ class Formatter:
         info["hit_length"] = seconds_to_string(int(info["hit_length"]))
         info["total_length"] = seconds_to_string(int(info["total_length"]))
 
-        difficulties = [float(diff["difficultyrating"]) for diff in map_info]
-        info["lowest_diff"] = min(difficulties)
-        info["highest_diff"] = max(difficulties)
-        info["diffs"] = len(difficulties)
+        diff_strings = []
+        for num, mode in MODES:
+            difficulties = [float(diff["difficultyrating"])
+                            for diff in map_info
+                            if diff["mode"] == num]
+            if not difficulties:
+                continue
+            diff_dict = {
+                "lowest_diff": min(difficulties),
+                "highest_diff": max(difficulties),
+                "diffs": len(difficulties),
+                "mode": mode
+            }
+
+            if diff_dict["diffs"] == 1:
+                diff_strings.append(self.diff.format(**diff_dict))
+            else:
+                diff_strings.append(self.diffs.format(**diff_dict))
+
+        info["diff_display"] = "\n".join(diff_strings)
 
         # Sanitised inputs
         for key in ["artist", "creator", "source", "title", "version"]:
