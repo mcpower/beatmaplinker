@@ -1,4 +1,4 @@
-from .tillerino import ALLOWED_MODES
+from .tillerino import ALLOWED_MODES, ALLOWED_APPROVED
 from functools import reduce
 
 MODES = [
@@ -13,7 +13,7 @@ class Formatter:
     def __init__(self, replacements, mapset, map, header="", footer="",
                  selfpost_header=None, selfpost_footer=None, meme_header=None,
                  meme_footer=None, sep="\n\n", char_limit=10000, diff="",
-                 diffs="", pp="", no_pp=""):
+                 diffs="", pp="", no_pp="", mapset_pp=""):
         self.replacements = replacements
         self.header = header
         self.footer = footer
@@ -34,6 +34,7 @@ class Formatter:
 
         self.pp = pp
         self.no_pp = no_pp
+        self.mapset_pp = mapset_pp
 
     def format_map(self, map_info, pp_info):
         """Formats a map for a comment given a array of dicts.
@@ -69,11 +70,6 @@ class Formatter:
 
         info["diff_display"] = "\n".join(diff_strings)
 
-        if pp_info:
-            info["pp_display"] = self.pp.format(pp_info=pp_info, **info)
-        else:
-            info["pp_display"] = self.no_pp.format(**info)
-
         # Sanitised inputs
         for key in ["artist", "creator", "source", "title", "version"]:
             info[key] = sanitise_md(info[key])
@@ -83,8 +79,23 @@ class Formatter:
             info[sect] = section_obj[info[section_obj["_key"]]].format(**info)
 
         if len(map_info) == 1:  # single map
+            if (info["mode"] in ALLOWED_MODES and
+                    info["approved"] in ALLOWED_APPROVED):
+                if pp_info:
+                    info["pp_display"] = self.pp.format(pp_info=pp_info,
+                                                        **info)
+                else:
+                    info["pp_display"] = self.no_pp.format(**info)
+            else:
+                info["pp_display"] = ""
+
             return self.map.format(**info)
         else:  # beatmap set
+            if info["approved"] in ALLOWED_APPROVED:
+                info["pp_display"] = self.mapset_pp.format(**info)
+            else:
+                info["pp_display"] = ""
+
             return self.mapset.format(**info)
 
     def format_comments(self, maps, selfpost=False, meme=False):

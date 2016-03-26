@@ -3,6 +3,7 @@ import requests
 API_URL = "http://bot.tillerino.org:1666/beatmapinfo"
 DEFAULT_API_KEY = "00000000000000000000000000000000"
 ALLOWED_MODES = {"0"}
+ALLOWED_APPROVED = {"2", "1"}
 
 
 class Tillerino:
@@ -16,18 +17,21 @@ class Tillerino:
         if self.api_key == DEFAULT_API_KEY or len(map_info) != 1:
             return {}
 
-        if map_info[0]["mode"] not in ALLOWED_MODES:
+        map_dict = map_info[0]
+
+        if (map_dict["mode"] not in ALLOWED_MODES or
+                map_dict["approved"] not in ALLOWED_APPROVED):
             return {}
 
         payload = {
             "k": self.api_key,
             "wait": self.wait,
-            "beatmapid": map_info[0]["beatmap_id"]
+            "beatmapid": map_dict["beatmap_id"]
         }
         r = requests.get(API_URL, params=payload)
         if r.status_code != 200:
             print(r.status_code, "occurred when getting pp data for",
-                  map_info[0]["beatmap_id"])
+                  map_dict["beatmap_id"])
             return {}
 
         # Tillerino returns a in a weird format, so let's convert that to a
