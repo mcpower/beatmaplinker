@@ -91,9 +91,9 @@ class Bot:
 
 def main():
     config = ConfigParser()
-    with open("config_default.ini") as c:
+    with open("config_default.ini", encoding="utf8") as c:
         config.read_file(c)
-    read_files = config.read("config.ini")
+    read_files = config.read("config.ini", encoding="utf8")
 
     if not read_files:
         print("We couldn't find config.ini!")
@@ -102,9 +102,9 @@ def main():
         sys.exit()
 
     replacements = ConfigParser()
-    with open("replacements_default.ini") as r:
+    with open("replacements_default.ini", encoding="utf8") as r:
         replacements.read_file(r)
-    replacements.read("replacements.ini")
+    replacements.read("replacements.ini", encoding="utf8")
 
     bot = Bot(config, replacements)
     bot.scan_loop()

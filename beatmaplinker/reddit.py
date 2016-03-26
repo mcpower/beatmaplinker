@@ -38,8 +38,8 @@ class Reddit:
 
     def reply_single(self, thing, text):
         """Post a comment replying to a thing."""
-        print("""Replying to {c.author.name}, thing id {c.id}\n{text}\n"""
-              .format(c=thing, text=text))
+        print("""Replying to {c.author.name}, thing id {c.id}"""
+              .format(c=thing))
 
         if isinstance(thing, praw.objects.Comment):
             out = thing.reply(text)
