@@ -1,3 +1,4 @@
+from .tillerino import ALLOWED_MODES
 from functools import reduce
 
 MODES = [
@@ -12,7 +13,7 @@ class Formatter:
     def __init__(self, replacements, mapset, map, header="", footer="",
                  selfpost_header=None, selfpost_footer=None, meme_header=None,
                  meme_footer=None, sep="\n\n", char_limit=10000, diff="",
-                 diffs=""):
+                 diffs="", pp="", no_pp=""):
         self.replacements = replacements
         self.header = header
         self.footer = footer
@@ -31,7 +32,10 @@ class Formatter:
         self.diff = diff
         self.diffs = diffs
 
-    def format_map(self, map_info):
+        self.pp = pp
+        self.no_pp = no_pp
+
+    def format_map(self, map_info, pp_info):
         """Formats a map for a comment given a array of dicts.
 
         Array of dicts is in the format of osu! API responses.
@@ -64,6 +68,11 @@ class Formatter:
                 diff_strings.append(self.diffs.format(**diff_dict))
 
         info["diff_display"] = "\n".join(diff_strings)
+
+        if pp_info:
+            info["pp_display"] = self.pp.format(pp_info=pp_info, **info)
+        else:
+            info["pp_display"] = self.no_pp.format(**info)
 
         # Sanitised inputs
         for key in ["artist", "creator", "source", "title", "version"]:

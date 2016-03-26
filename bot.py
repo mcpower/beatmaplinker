@@ -1,6 +1,6 @@
 import sys
 import time
-from beatmaplinker import format, osu, parse, reddit
+from beatmaplinker import format, osu, parse, reddit, tillerino
 from beatmaplinker import helpers as h
 from beatmaplinker.structs import LimitedSet, ConfigParser
 
@@ -11,6 +11,7 @@ class Bot:
             self.reddit = reddit.Reddit(**config["reddit"])
             self.osu = osu.Osu(**config["osu"])
             self.formatter = format.Formatter(replace, **config["template"])
+            self.tillerino = tillerino.Tillerino(**config["tillerino"])
 
             bot_sect = config["bot"]
             self.max_comments = int(bot_sect["max_comments"])
@@ -50,10 +51,10 @@ class Bot:
             if len(found) > 300:
                 comments = ["Too many maps.\n\n" + self.formatter.footer]
             else:
-                map_strings = list(map(h.compose(
-                    self.osu.get_beatmap_info,
-                    self.formatter.format_map
-                ), found))
+                map_info = list(map(self.osu.get_beatmap_info, found))
+                pp_info = list(map(self.tillerino.get_pp_info, map_info))
+                map_strings = list(map(self.formatter.format_map,
+                                       map_info, pp_info))
                 is_selfpost = thing_type == "submission"
                 is_meme = (self.meme is not None and
                            sum(self.meme in s for s in map_strings) > 1)
