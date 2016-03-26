@@ -33,6 +33,11 @@ class Formatter:
         info["hit_length"] = seconds_to_string(int(info["hit_length"]))
         info["total_length"] = seconds_to_string(int(info["total_length"]))
 
+        difficulties = [float(diff["difficultyrating"]) for diff in map_info]
+        info["lowest_diff"] = min(difficulties)
+        info["highest_diff"] = max(difficulties)
+        info["diffs"] = len(difficulties)
+
         # Sanitised inputs
         for key in ["artist", "creator", "source", "title", "version"]:
             info[key] = sanitise_md(info[key])
