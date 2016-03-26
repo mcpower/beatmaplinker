@@ -56,7 +56,7 @@ class ConfigParser(cp.ConfigParser):
         self.__keep_spaces = args.get(KEEP_SPACES_KEYWORD, True)
         args.pop(KEEP_SPACES_KEYWORD, None)
 
-        cp.ConfigParser.__init__(self, **args)
+        cp.ConfigParser.__init__(self, interpolation=None, **args)
 
     def get(self, section, option, *, raw=False, vars=None,
             fallback=cp._UNSET):
