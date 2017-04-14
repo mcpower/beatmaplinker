@@ -4,10 +4,14 @@ import html
 
 
 class Reddit:
-    def __init__(self, username, password, user_agent, subreddit):
-        self.r = praw.Reddit(user_agent=user_agent)
-        self.r.login(username, password)
-        self.subreddit = self.r.get_subreddit(subreddit)
+    def __init__(self, username, password, user_agent, subreddit,
+                 client_id, client_secret):
+        self.r = praw.Reddit(client_id=client_id,
+                             client_secret=client_secret,
+                             user_agent=user_agent,
+                             username=username,
+                             password=password)
+        self.subreddit = self.r.subreddit(subreddit)
 
         self.botname = username
 
@@ -16,9 +20,9 @@ class Reddit:
 
         Apparently costly.
         Taken from http://reddit.com/r/redditdev/comments/1kxd1n/_/cbv4usl"""
-        if isinstance(t, praw.objects.Comment):
-            replies = self.r.get_submission(t.permalink).comments[0].replies
-        elif isinstance(t, praw.objects.Submission):
+        if isinstance(t, praw.models.Comment):
+            replies = t.replies
+        elif isinstance(t, praw.models.Submission):
             replies = t.comments
         else:
             raise Exception("{0} is an invalid thing type".format(type(t)))
@@ -41,9 +45,9 @@ class Reddit:
         print("""Replying to {c.author.name}, thing id {c.id}"""
               .format(c=thing))
 
-        if isinstance(thing, praw.objects.Comment):
+        if isinstance(thing, praw.models.Comment):
             out = thing.reply(text)
-        elif isinstance(thing, praw.objects.Submission):
+        elif isinstance(thing, praw.models.Submission):
             out = thing.add_comment(text)
         else:
             raise Exception("{0} is an invalid thing type".format(type(thing)))
@@ -51,17 +55,17 @@ class Reddit:
         return out
 
     def get_comments(self, limit):
-        return self.subreddit.get_comments(limit=limit)
+        return self.subreddit.comments(limit=limit)
 
     def get_submissions(self, limit):
-        return self.subreddit.get_new(limit=limit)
+        return self.subreddit.new(limit=limit)
 
 
 def get_html_from_thing(thing):
     """Returns the HTML content of a thing."""
-    if isinstance(thing, praw.objects.Comment):
+    if isinstance(thing, praw.models.Comment):
         out = thing.body_html
-    elif isinstance(thing, praw.objects.Submission):
+    elif isinstance(thing, praw.models.Submission):
         out = thing.selftext_html
         if not out:
             return ""
