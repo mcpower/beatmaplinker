@@ -21,6 +21,7 @@ class Reddit:
         Apparently costly.
         Taken from http://reddit.com/r/redditdev/comments/1kxd1n/_/cbv4usl"""
         if isinstance(t, praw.models.Comment):
+            t.refresh()
             replies = t.replies
         elif isinstance(t, praw.models.Submission):
             replies = t.comments
