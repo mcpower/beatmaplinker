@@ -28,9 +28,10 @@ You can define your own replacements for things such as `mode` and `approved` wi
 
 With the introduction of ranking status being available in comments, each status is formatted differently in the default configuration (which /u/BeatmapLinker uses). Most maps (approved and ranked) will be the usual bold, but the others are as below:
 
+*  ❤ Loved ❤ 
 * ***Qualified***
 * **Approved**
 * **Ranked**
-* Pending (this seems to be unused)
-* WIP
-* ~~Graveyard~~
+* *Pending* (this seems to be unused)
+* *WIP*
+* Graveyard
