@@ -6,6 +6,7 @@ At the time of writing, an instance of the bot is running at [/u/BeatmapLinker](
 # Prerequisites
 
 * A [reddit account](http://reddit.com/register) for your bot
+* A [reddit API client](https://www.reddit.com/prefs/apps/) for your bot
 * An [osu! API key](https://osu.ppy.sh/p/api) to get beatmap data
 * Python 3 for the script
 * Modules `praw` and `requests` for using the reddit and osu! APIs respectively.
