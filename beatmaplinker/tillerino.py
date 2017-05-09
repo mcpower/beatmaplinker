@@ -1,6 +1,6 @@
 import requests
 
-API_URL = "http://bot.tillerino.org:1666/beatmapinfo"
+API_URL = "https://api.tillerino.org/"
 DEFAULT_API_KEY = "00000000000000000000000000000000"
 ALLOWED_MODES = {"0"}
 ALLOWED_APPROVED = {"2", "1"}
