@@ -46,10 +46,9 @@ class Reddit:
         print("""Replying to {c.author.name}, thing id {c.id}"""
               .format(c=thing))
 
-        if isinstance(thing, praw.models.Comment):
+        if (isinstance(thing, praw.models.Comment) or
+            isinstance(thing, praw.models.Submission)):
             out = thing.reply(text)
-        elif isinstance(thing, praw.models.Submission):
-            out = thing.add_comment(text)
         else:
             raise Exception("{0} is an invalid thing type".format(type(thing)))
         print("Replied!")
