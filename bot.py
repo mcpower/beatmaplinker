@@ -31,7 +31,7 @@ class Bot:
         """Scans content for new things to reply to."""
         for thing in content:
             if thing.id in seen:
-                break  # already reached up to here before
+                continue  # already reached up to here before
             seen.add(thing.id)
             found = list(h.compose(
                 reddit.get_html_from_thing,
