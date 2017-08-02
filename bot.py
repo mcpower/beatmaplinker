@@ -46,7 +46,7 @@ class Bot:
                 continue
             if self.reddit.has_replied(thing):
                 print("We've replied to", thing_type, thing.id, "before!")
-                break  # we reached here in a past instance of this bot
+                continue  # we reached here in a past instance of this bot
 
             if len(found) > 300:
                 comments = ["Too many maps.\n\n" + self.formatter.footer]
