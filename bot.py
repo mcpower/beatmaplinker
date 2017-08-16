@@ -32,7 +32,7 @@ class Bot:
         for thing in content:
             if thing.id in seen:
                 continue  # already reached up to here before
-            seen.add(thing.id)
+            cur_id = thing.id
             found = list(h.compose(
                 reddit.get_html_from_thing,
                 parse.get_links_from_html,
@@ -43,13 +43,27 @@ class Bot:
 
             if not found:
                 print("New", thing_type, thing.id, "with no maps.")
+                if thing.id != cur_id:
+                    print("thing id changed, not found")
+                    continue
+                seen.add(thing.id)
                 continue
             if self.reddit.has_replied(thing):
                 print("We've replied to", thing_type, thing.id, "before!")
+                if thing.id != cur_id:
+                    print("thing id changed, has replied")
+                    continue
+                seen.add(thing.id)
                 continue  # we reached here in a past instance of this bot
 
             if len(found) > 300:
                 comments = ["Too many maps.\n\n" + self.formatter.footer]
+                print("thing:", thing.id, "too many maps.")
+                if thing.id != cur_id:
+                    print("thing id changed, too many maps")
+                    continue
+                self.reddit.reply(thing, comments)
+                seen.add(thing.id)
             else:
                 map_info = list(map(self.osu.get_beatmap_info, found))
                 pp_info = list(map(self.tillerino.get_pp_info, map_info))
@@ -62,8 +76,12 @@ class Bot:
                 comments = self.formatter.format_comments(map_strings,
                                                           selfpost=is_selfpost,
                                                           meme=is_meme)
-
-            self.reddit.reply(thing, comments)
+                print("thing:", thing.id, "found:", found)
+                if thing.id != cur_id:
+                    print("thing id changed, normal comment")
+                    continue
+                self.reddit.reply(thing, comments)
+                seen.add(thing.id)
 
     def scan_loop(self):
         while True:
