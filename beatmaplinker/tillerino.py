@@ -28,7 +28,11 @@ class Tillerino:
             "wait": self.wait,
             "beatmapid": map_dict["beatmap_id"]
         }
-        r = requests.get(API_URL, params=payload)
+        try:
+            r = requests.get(API_URL, params=payload)
+        except Exception as e:
+            print("tillerino:", e)
+            return {}
         if r.status_code != 200:
             print(r.status_code, "occurred when getting pp data for",
                   map_dict["beatmap_id"])
