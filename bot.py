@@ -42,14 +42,14 @@ class Bot:
             )(thing))
 
             if not found:
-                print("New", thing_type, thing.id, "with no maps.")
+                # print("New", thing_type, thing.id, "with no maps.")
                 if thing.id != cur_id:
                     print("thing id changed, not found")
                     continue
                 seen.add(thing.id)
                 continue
             if self.reddit.has_replied(thing):
-                print("We've replied to", thing_type, thing.id, "before!")
+                # print("We've replied to", thing_type, thing.id, "before!")
                 if thing.id != cur_id:
                     print("thing id changed, has replied")
                     continue
