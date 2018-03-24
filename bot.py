@@ -15,9 +15,9 @@ class Bot:
 
             bot_sect = config["bot"]
             self.max_comments = int(bot_sect["max_comments"])
-            self.seen_comments = LimitedSet(self.max_comments + 100)
+            self.seen_comments = LimitedSet(2 * self.max_comments)
             self.max_submissions = int(bot_sect["max_submissions"])
-            self.seen_submissions = LimitedSet(self.max_submissions + 50)
+            self.seen_submissions = LimitedSet(2 * self.max_submissions)
             self.extra_delay = int(bot_sect.get("extra_delay", 0))
             self.meme = bot_sect.get("meme", None)
         except Exception as e:
@@ -49,7 +49,7 @@ class Bot:
                 seen.add(thing.id)
                 continue
             if self.reddit.has_replied(thing):
-                # print("We've replied to", thing_type, thing.id, "before!")
+                print("We've replied to", thing_type, thing.id, "before!")
                 if thing.id != cur_id:
                     print("thing id changed, has replied")
                     continue
