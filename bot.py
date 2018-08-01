@@ -1,3 +1,5 @@
+import multiprocessing as mp
+import multiprocessing.connection as mpc
 import sys
 import time
 from beatmaplinker import format, osu, parse, reddit, tillerino
@@ -38,60 +40,95 @@ class Bot:
             reddit_instance = self.reddit
 
         for thing in content:
-            if thing.id in seen:
-                continue  # already reached up to here before
-            cur_id = thing.id
-            found = list(h.compose(
-                reddit.get_html_from_thing,
-                parse.get_links_from_html,
-                h.mapf(parse.get_map_params),
-                h.truthies,
-                h.remove_dups
-            )(thing))
+            self.process_content(thing_type, thing, seen, reddit_instance)
 
-            if not found:
-                # print("New", thing_type, thing.id, "with no maps.")
-                if thing.id != cur_id:
-                    print("thing id changed, not found")
-                    continue
-                seen.add(thing.id)
+    def scan_content_stream(self, thing_type):
+        """
+        Scans content using PRAW streams and catch errors.
+        This is better than scan_loop as PRAW has its own optimisations to
+        reduce network / CPU usage, see
+        https://github.com/praw-dev/praw/blob/ceb8acde155af72b98adbac7b2fc3aa9f596bb9e/praw/models/util.py#L167-L168
+        """
+        # Note that a seen set is not that useful here as PRAW keeps its own,
+        # but as PRAW's stream may crash we still want to keep it around.
+
+        # Additionally, we create a new reddit instance for the stream.
+        # This is because requests.Session may not be thread safe, see
+        # https://praw.readthedocs.io/en/v5.4.0/getting_started/multiple_instances.html
+        # We don't use requests.Session for any other API wrappers,
+        # so those should be thread safe - no state is mutated, only read.
+        reddit_instance = self.get_new_reddit()
+        if thing_type == "comment":
+            content = reddit_instance.get_comment_stream()
+            seen = self.seen_comments
+        else:
+            content = reddit_instance.get_submission_stream()
+            seen = self.seen_submissions
+
+        for thing in content:
+            try:
+                self.process_content(thing_type, thing, seen, reddit_instance)
+            except Exception as e:
+                print("We caught an exception when processing a thing! It says:")
+                print(e)
+                print("The {} in question was {}".format(thing_type, thing.id))
                 continue
-            if reddit_instance.has_replied(thing):
-                print("We've replied to", thing_type, thing.id, "before!")
-                if thing.id != cur_id:
-                    print("thing id changed, has replied")
-                    continue
-                seen.add(thing.id)
-                continue  # we reached here in a past instance of this bot
 
-            if len(found) > 300:
-                comments = ["Too many maps.\n\n" + self.formatter.footer]
-                print("thing:", thing.id, "too many maps.")
-                if thing.id != cur_id:
-                    print("thing id changed, too many maps")
-                    continue
-                reddit_instance.reply(thing, comments)
-                seen.add(thing.id)
-            else:
-                map_info = list(map(self.osu.get_beatmap_info, found))
-                pp_info = list(map(self.tillerino.get_pp_info, map_info))
-                map_strings = list(map(self.formatter.format_map,
-                                       map_info, pp_info))
-                is_selfpost = thing_type == "submission"
-                is_meme = (self.meme is not None and
-                           sum(self.meme in s for s in map_strings) > 1)
+    def process_content(self, thing_type, thing, seen, reddit_instance):
+        if thing.id in seen:
+            return  # already reached up to here before
+        cur_id = thing.id
+        found = list(h.compose(
+            reddit.get_html_from_thing,
+            parse.get_links_from_html,
+            h.mapf(parse.get_map_params),
+            h.truthies,
+            h.remove_dups
+        )(thing))
 
-                comments = self.formatter.format_comments(map_strings,
-                                                          selfpost=is_selfpost,
-                                                          meme=is_meme)
-                print("thing:", thing.id, "found:", found)
-                if thing.id != cur_id:
-                    print("thing id changed, normal comment")
-                    continue
-                reddit_instance.reply(thing, comments)
-                seen.add(thing.id)
+        if not found:
+            # print("New", thing_type, thing.id, "with no maps.")
+            if thing.id != cur_id:
+                print("thing id changed, not found")
+                return
+            seen.add(thing.id)
+            return
+        if reddit_instance.has_replied(thing):
+            print("We've replied to", thing_type, thing.id, "before!")
+            if thing.id != cur_id:
+                print("thing id changed, has replied")
+                return
+            seen.add(thing.id)
+            return  # we reached here in a past instance of this bot
 
-    def scan_loop(self):
+        if len(found) > 300:
+            comments = ["Too many maps.\n\n" + self.formatter.footer]
+            print("thing:", thing.id, "too many maps.")
+            if thing.id != cur_id:
+                print("thing id changed, too many maps")
+                return
+            reddit_instance.reply(thing, comments)
+            seen.add(thing.id)
+        else:
+            map_info = list(map(self.osu.get_beatmap_info, found))
+            pp_info = list(map(self.tillerino.get_pp_info, map_info))
+            map_strings = list(map(self.formatter.format_map,
+                                    map_info, pp_info))
+            is_selfpost = thing_type == "submission"
+            is_meme = (self.meme is not None and
+                        sum(self.meme in s for s in map_strings) > 1)
+
+            comments = self.formatter.format_comments(map_strings,
+                                                        selfpost=is_selfpost,
+                                                        meme=is_meme)
+            print("thing:", thing.id, "found:", found)
+            if thing.id != cur_id:
+                print("thing id changed, normal comment")
+                return
+            reddit_instance.reply(thing, comments)
+            seen.add(thing.id)
+
+    def run_scan_loop(self):
         while True:
             try:
                 self.scan_content(
@@ -115,6 +152,31 @@ class Bot:
                 time.sleep(15)
                 continue
 
+    def run_scan_stream(self):
+        while True:
+            comment_process = mp.Process(
+                target=self.scan_content_stream,
+                args=("comment",),
+            )
+            comment_process.start()
+
+            submission_process = mp.Process(
+                target=self.scan_content_stream,
+                args=("submission",),
+            )
+            submission_process.start()
+
+            mpc.wait([
+                comment_process.sentinel,
+                submission_process.sentinel
+            ])
+
+            print("Something went wrong - restarting processes.")
+            submission_process.terminate()
+            comment_process.terminate()
+            print("Sleeping for 15 seconds.")
+            time.sleep(15)
+
 
 def main():
     config = ConfigParser()
@@ -134,7 +196,7 @@ def main():
     replacements.read("replacements.ini", encoding="utf8")
 
     bot = Bot(config, replacements)
-    bot.scan_loop()
+    bot.run_scan_stream()
 
 
 if __name__ == '__main__':

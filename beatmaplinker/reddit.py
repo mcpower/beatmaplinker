@@ -60,6 +60,12 @@ class Reddit:
     def get_submissions(self, limit):
         return self.subreddit.new(limit=limit)
 
+    def get_comment_stream(self):
+        return self.subreddit.stream.comments()
+
+    def get_submission_stream(self):
+        return self.subreddit.stream.submissions()
+
 
 def get_html_from_thing(thing):
     """Returns the HTML content of a thing."""
