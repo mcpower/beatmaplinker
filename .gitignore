@@ -58,3 +58,5 @@ target/
 
 config.ini
 replacements.ini
+
+.mypy_cache/
