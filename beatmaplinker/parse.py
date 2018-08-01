@@ -2,7 +2,8 @@ import html
 import urllib.parse
 import re
 
-URL_REGEX = re.compile(r'<a href="(?P<url>https?://osu\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
+URL_REGEX = re.compile(r'<a href="(?P<url>https?://(?:osu|old)\.ppy\.sh/[^"]+)">(?P=url)</a>')  # NOQA
+NEW_SITE_PATH = "/beatmapsets/"
 
 
 def get_map_params(url):
@@ -13,6 +14,10 @@ def get_map_params(url):
         https://osu.ppy.sh/b/244182
         https://osu.ppy.sh/p/beatmap?s=295480
         https://osu.ppy.sh/s/295480
+
+        https://osu.ppy.sh/beatmapsets/89888#osu/244182
+    
+    Assume maps on new site link to the set, not the specific map.
     """
     parsed = urllib.parse.urlparse(url)
 
@@ -27,6 +32,10 @@ def get_map_params(url):
             map_type, map_id = "b", query["b"][0]
         elif "s" in query:
             map_type, map_id = "s", query["s"][0]
+    elif parsed.path.startswith(NEW_SITE_PATH):
+        # The map selection is given in parsed as "fragment".
+        # Ignore this, as we are assuming it's linking to the set.
+        map_type, map_id = "s", parsed.path[len(NEW_SITE_PATH):]
     if map_id is not None and "&" in map_id:
         map_id = map_id[:map_id.index("&")]
     if map_type and map_id.isdigit():
