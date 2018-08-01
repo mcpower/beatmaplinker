@@ -8,7 +8,9 @@ from beatmaplinker.structs import LimitedSet, ConfigParser
 class Bot:
     def __init__(self, config, replace):
         try:
-            self.reddit = reddit.Reddit(**config["reddit"])
+            self.config = config
+            # Note: this reddit instance may not be used!
+            self.reddit = self.get_new_reddit()
             self.osu = osu.Osu(**config["osu"])
             self.formatter = format.Formatter(replace, **config["template"])
             self.tillerino = tillerino.Tillerino(**config["tillerino"])
@@ -27,8 +29,14 @@ class Bot:
             print(e)
             sys.exit()
 
-    def scan_content(self, thing_type, content, seen):
+    def get_new_reddit(self):
+        return reddit.Reddit(**self.config["reddit"])
+
+    def scan_content(self, thing_type, content, seen, reddit_instance=None):
         """Scans content for new things to reply to."""
+        if reddit_instance is None:
+            reddit_instance = self.reddit
+
         for thing in content:
             if thing.id in seen:
                 continue  # already reached up to here before
@@ -48,7 +56,7 @@ class Bot:
                     continue
                 seen.add(thing.id)
                 continue
-            if self.reddit.has_replied(thing):
+            if reddit_instance.has_replied(thing):
                 print("We've replied to", thing_type, thing.id, "before!")
                 if thing.id != cur_id:
                     print("thing id changed, has replied")
@@ -62,7 +70,7 @@ class Bot:
                 if thing.id != cur_id:
                     print("thing id changed, too many maps")
                     continue
-                self.reddit.reply(thing, comments)
+                reddit_instance.reply(thing, comments)
                 seen.add(thing.id)
             else:
                 map_info = list(map(self.osu.get_beatmap_info, found))
@@ -80,7 +88,7 @@ class Bot:
                 if thing.id != cur_id:
                     print("thing id changed, normal comment")
                     continue
-                self.reddit.reply(thing, comments)
+                reddit_instance.reply(thing, comments)
                 seen.add(thing.id)
 
     def scan_loop(self):
