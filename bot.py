@@ -60,10 +60,13 @@ class Bot:
         reddit_instance = self.get_new_reddit()
         if thing_type == "comment":
             content_factory = reddit_instance.get_comment_stream
-            seen = self.seen_comments
         else:
             content_factory = reddit_instance.get_submission_stream
-            seen = self.seen_submissions
+
+        # We want the seen set to stay local to the method call / process,
+        # as if this process is terminated while global state is being
+        # mutated, bad things may(?) occur.
+        seen = LimitedSet(300)
 
         while True:
             try:
