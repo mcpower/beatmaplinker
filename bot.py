@@ -59,20 +59,29 @@ class Bot:
         # so those should be thread safe - no state is mutated, only read.
         reddit_instance = self.get_new_reddit()
         if thing_type == "comment":
-            content = reddit_instance.get_comment_stream()
+            content_factory = reddit_instance.get_comment_stream
             seen = self.seen_comments
         else:
-            content = reddit_instance.get_submission_stream()
+            content_factory = reddit_instance.get_submission_stream
             seen = self.seen_submissions
 
-        for thing in content:
+        while True:
             try:
-                self.process_content(thing_type, thing, seen, reddit_instance)
+                print("Starting", thing_type, "streaming.")
+                for thing in content_factory():
+                    try:
+                        self.process_content(thing_type, thing, seen, reddit_instance)
+                    except Exception as e:
+                        print("We caught an exception when processing a thing! It says:")
+                        print(e)
+                        print("The {} in question was {}".format(thing_type, thing.id))
+                        continue
             except Exception as e:
-                print("We caught an exception when processing a thing! It says:")
+                print("Caught exception while getting reddit data:")
                 print(e)
-                print("The {} in question was {}".format(thing_type, thing.id))
-                continue
+                print("Sleeping for 15 seconds.")
+                time.sleep(15)
+
 
     def process_content(self, thing_type, thing, seen, reddit_instance):
         if thing.id in seen:
