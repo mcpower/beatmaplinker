@@ -7,8 +7,7 @@ NEW_SITE_PATH = "/beatmapsets/"
 
 
 def get_map_params(url):
-    """Returns a tuple of (map_type, map_id) or False if URL is invalid.
-
+    """Returns a tuple of (map_type, map_id) or None if URL is invalid.
     Possible URL formats:
         https://osu.ppy.sh/p/beatmap?b=115891&m=0#
         https://osu.ppy.sh/b/244182
@@ -16,6 +15,7 @@ def get_map_params(url):
         https://osu.ppy.sh/s/295480
 
         https://osu.ppy.sh/beatmapsets/89888#osu/244182
+        https://osu.ppy.sh/beatmapsets/781006/#osu/1640424
     
     Assume maps on new site link to the set, not the specific map.
     """
@@ -36,11 +36,18 @@ def get_map_params(url):
         # The map selection is given in parsed as "fragment".
         # Ignore this, as we are assuming it's linking to the set.
         map_type, map_id = "s", parsed.path[len(NEW_SITE_PATH):]
-    if map_id is not None and "&" in map_id:
+
+    if map_id is None:
+        return
+
+    if "&" in map_id:
+        # I think this should never happen.
         map_id = map_id[:map_id.index("&")]
+
+    map_id = map_id.rstrip("/")
+
     if map_type and map_id.isdigit():
         return map_type, map_id
-    return False
 
 
 def get_links_from_html(html_string):
